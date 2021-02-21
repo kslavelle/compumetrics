@@ -13,26 +13,45 @@ func dbConn(c *gin.Context) (*pgx.Conn, bool) {
 	return conn, ok
 }
 
-func dbCheckUserExists(c *gin.Context, conn *pgx.Conn, email string) (User, error) {
+// UserInDB Checks if the User is in the database.
+func UserInDB(c *gin.Context, conn *pgx.Conn, email string) (exists bool, err error) {
 
-	user := User{}
 	query := `
-		SELECT
-			email, password
-		FROM
-			users
-		WHERE
-			email=$1
-	`
+        SELECT
+            count(*) > 0
+        FROM
+            users
+        WHERE
+            email=$1
+    `
+	err = conn.QueryRow(
+		context.Background(), query, email,
+	).Scan(&exists)
 
-	err := conn.QueryRow(context.Background(), query, email).Scan(
-		&user.Email, &user.Password,
-	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"detail": "pleas try again later",
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"detail": "please try again later",
 		})
+		return
+	}
+	return
+}
+
+// DBAddUser Add email and hashed password to SQL DB.
+func DBAddUser(c *gin.Context, conn *pgx.Conn, user RegisterUser) error {
+	query := `
+		INSERT INTO users
+			(email, hashed_password)
+		VALUES
+			($1, $2)
+	`
+	_, err := conn.Exec(context.Background(), query, user.Email, user.Password)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"detail": "unknown",
+		})
+		return err
 	}
 
-	return user, err
+	return nil
 }
