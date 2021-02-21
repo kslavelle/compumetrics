@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v4"
 )
 
 func healthCheck(c *gin.Context) {
@@ -39,7 +40,12 @@ func register(c *gin.Context) {
 	// check that the user is not in the database
 	dbUser, err := dbCheckUserExists(c, conn, user.Email)
 	if err != nil {
-		return
+		switch err {
+		case pgx.ErrNoRows:
+			break
+		default:
+			return
+		}
 	}
 
 	// perform some checks on the email & password
