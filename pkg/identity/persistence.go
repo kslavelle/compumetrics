@@ -26,7 +26,7 @@ func getUser(c *gin.Context, conn *pgx.Conn, username string) (User, error) {
 	`
 	err := conn.QueryRow(
 		context.Background(), query, username,
-	).Scan(&user.Email, &user.HashedPassword)
+	).Scan(&user.Email, &user.PasswordHash)
 
 	if err != nil {
 		switch err {
