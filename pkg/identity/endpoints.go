@@ -13,6 +13,35 @@ func healthCheck(c *gin.Context) {
 	})
 }
 
+func loginEndpoint(c *gin.Context) {
+
+	conn, ok := dbConn(c)
+
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"detail": "Internal service error",
+		})
+		return
+	}
+
+	username := c.PostForm("username")
+	hashedPassword := hashPassword(c.PostForm("password"))
+
+	// See if user is in the database.
+	user, err := getUser(c, conn, username)
+	if err != nil {
+		return
+	}
+
+	// Check the supplied password is correct
+	if user.PasswordHash == hashedPassword {
+	} // What do we do here? I know if the password is correct we need to give the user
+	// a token, but I forgot how this works.
+
+	// Return this block if the return int he block above isn't hit.
+	//	return c.JSON(http.StatusUnauthorized, gin.H{"detail": "User or password not recognised."})
+}
+
 func register(c *gin.Context) {
 
 	conn, ok := dbConn(c)
