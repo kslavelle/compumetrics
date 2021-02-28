@@ -25,7 +25,7 @@ func GenerateToken(email string) (string, error) {
 	return token, err
 }
 
-func ValidateToken(c *gin.Context, handler func(*gin.Context, string)) {
+func ValidateToken(c *gin.Context) (string, error) {
 
 	bearerToken := c.GetHeader("Authorization")
 	tokenString := strings.Split(bearerToken, " ")[1]
@@ -40,14 +40,14 @@ func ValidateToken(c *gin.Context, handler func(*gin.Context, string)) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"detail": "error validating token",
 		})
-		return
+		return "", err
 	}
 
 	if _, ok := token.Claims.(jwt.Claims); !ok || !token.Valid {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"detail": "error validating token",
 		})
-		return
+		return "", err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
@@ -55,9 +55,8 @@ func ValidateToken(c *gin.Context, handler func(*gin.Context, string)) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"detail": "error validating token",
 		})
-		return
+		return "", err
 	}
 
-	email := claims["email"].(string)
-	handler(c, email)
+	return claims["email"].(string), nil
 }
